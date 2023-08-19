@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from account.serializers import UserRegistrationSerializer, UserLoginSerializer
 from account.renderers import UserRenderers
+from account.jwt_token import get_tokens_for_user
 
 
 class UserRegistrationView(APIView):
@@ -13,7 +14,8 @@ class UserRegistrationView(APIView):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             user = serializer.save()
-            return Response({'mag': 'Registration Success'}, status=status.HTTP_201_CREATED)
+            token = get_tokens_for_user(user)
+            return Response({'token': token, 'mag': 'Registration Success'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -27,7 +29,8 @@ class UserLoginView(APIView):
             password = serializer.data.get('password')
             user = authenticate(email=email, password=password)
             if user is not None:
-                return Response({'msg': 'Login Success'}, status=status.HTTP_200_OK)
+                token = get_tokens_for_user(user)
+                return Response({'token': token, 'msg': 'Login Success'}, status=status.HTTP_200_OK)
             else:
                 return Response({'error': {'non_field_error': ['Email or Password is not valid']}},
                                 status=status.HTTP_404_NOT_FOUND)
